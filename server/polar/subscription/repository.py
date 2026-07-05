@@ -304,8 +304,18 @@ class SubscriptionRepository(
                 EmailLog.status == EmailLogStatus.sent,
                 EmailLog.email_props["subscription"]["id"].as_string()
                 == cast(Subscription.id, sa.String),
-                EmailLog.email_props["renewal_date"].as_string()
-                == sa.func.to_char(Subscription.current_period_end, "MM/DD/YYYY"),
+                EmailLog.email_props["renewal_date"]
+                .as_string()
+                .in_(
+                    [
+                        # Matches babel's format="long", locale="en_US"
+                        sa.func.to_char(
+                            Subscription.current_period_end, "FMMonth FMDD, YYYY"
+                        ),
+                        # Reminders logged before the switch to long dates
+                        sa.func.to_char(Subscription.current_period_end, "MM/DD/YYYY"),
+                    ]
+                ),
             )
             .correlate(Subscription)
             .exists()
@@ -351,8 +361,16 @@ class SubscriptionRepository(
                 EmailLog.status == EmailLogStatus.sent,
                 EmailLog.email_props["subscription"]["id"].as_string()
                 == cast(Subscription.id, sa.String),
-                EmailLog.email_props["conversion_date"].as_string()
-                == sa.func.to_char(Subscription.trial_end, "MM/DD/YYYY"),
+                EmailLog.email_props["conversion_date"]
+                .as_string()
+                .in_(
+                    [
+                        # Matches babel's format="long", locale="en_US"
+                        sa.func.to_char(Subscription.trial_end, "FMMonth FMDD, YYYY"),
+                        # Reminders logged before the switch to long dates
+                        sa.func.to_char(Subscription.trial_end, "MM/DD/YYYY"),
+                    ]
+                ),
             )
             .correlate(Subscription)
             .exists()
